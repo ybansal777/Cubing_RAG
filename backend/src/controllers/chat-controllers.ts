@@ -3,10 +3,10 @@ import User from "../models/User.js";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import {Document, VectorStoreIndex, SimpleDirectoryReader} from "llamaindex";
 import * as llamaIndex from "llamaindex"
+import {fetchAndSaveFile} from "../controllers/fetch-Rules.js"
 import "dotenv/config"
 
-
-const documents = await new SimpleDirectoryReader().loadData({directoryPath: "/Users/yash/Documents/Mini_Projects/Full Stack Chatbot/backend/src/rules"});
+const documents = await new SimpleDirectoryReader().loadData({directoryPath: "././src/rules"});
 const splitter = new llamaIndex.SentenceSplitter({chunkSize: 1024, chunkOverlap: 0});
 const nodes = splitter.getNodesFromDocuments(documents);
 const index = await VectorStoreIndex.fromDocuments(nodes);
@@ -25,6 +25,10 @@ let customQaPrompt = function({context = "", query = ""}) {
         ---------------------
         Given the context information, answer the query.
         Only reference the WCA guidelines and regulations. 
+        Don't mix up the regulations with the guidelines.
+        The regulations consist of Articles 1 to 12 and A to H.
+        The guidelines have articles but they only serve as supplements to the regulations. 
+        Regulation A2c refers to Regulation A2c inside Article A, not Regulation 2c inside Article 2.
         If the prompt isn't related to the rules and regulations, ask the user to ask a related question. 
         Try to be as concise as possible.
 
@@ -58,6 +62,8 @@ export const generateChatCompletion = async (
     res: Response,
     next: NextFunction
 ) => {
+    fetchAndSaveFile("wca-regulations.md");
+    fetchAndSaveFile("wca-guidelines.md");
     const { message } = req.body;
     try {
         const user = await User.findById(res.locals.jwtData.id);
